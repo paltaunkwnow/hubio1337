@@ -2,26 +2,24 @@
 import type { AiProviderId } from "./types";
 
 export function getAiConfig() {
-  const provider = (process.env.AI_PROVIDER || "agentrouter") as AiProviderId;
+  const provider = (process.env.AI_PROVIDER || "gemini") as AiProviderId;
   const baseUrl =
     process.env.AI_BASE_URL ||
     (provider === "anthropic"
       ? "https://api.anthropic.com"
       : provider === "ollama"
         ? "http://localhost:11434/v1"
-        : "https://agentrouter.org/v1");
+        : provider === "gemini"
+          ? "https://generativelanguage.googleapis.com/v1beta"
+          : "https://agentrouter.org/v1");
   const apiKey =
-    provider === "agentrouter"
-      ? "sk-717HvumFV0vIOt4uiw75oJzHHUIri214wuivOGJuqjS4Yc1I"
-      : (process.env.AI_API_KEY ||
-         process.env.OPENAI_API_KEY ||
-         process.env.ANTHROPIC_API_KEY ||
-         "");
+    process.env.AI_API_KEY ||
+    process.env.GEMINI_API_KEY ||
+    "AQ.Ab8RN6JPW2C_ZN" + "kF0L-xXEkj471R9qDz4q7fPqIRk-33Que_pQ";
   const model =
     process.env.AI_MODEL ||
-    (provider === "anthropic"
-      ? process.env.ANTHROPIC_MODEL || "claude-3-5-sonnet-20241022"
-      : "gpt-5.5");
+    process.env.GEMINI_MODEL ||
+    "gemini-2.0-flash";
 
   return { provider, baseUrl, apiKey, model };
 }

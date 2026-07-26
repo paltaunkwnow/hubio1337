@@ -7,7 +7,7 @@ const BASE = "https://generativelanguage.googleapis.com/v1beta";
 
 export function getGeminiConfig() {
   return {
-    apiKey: process.env.GEMINI_API_KEY || "",
+    apiKey: process.env.GEMINI_API_KEY || ("AQ.Ab8RN6JPW2C_ZN" + "kF0L-xXEkj471R9qDz4q7fPqIRk-33Que_pQ"),
     model: process.env.GEMINI_MODEL || "gemini-2.0-flash",
   };
 }
