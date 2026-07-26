@@ -14,7 +14,7 @@ export async function aiGenerate(options: AiGenerateOptions): Promise<AiGenerate
   });
 
   if (options.userId) {
-    const rate = checkAiRateLimit(options.userId, options.userPlan || "FREE");
+    const rate = await checkAiRateLimit(options.userId, options.userPlan || "FREE");
     if (!rate.allowed) throw new Error(rate.message);
   }
 
@@ -67,7 +67,7 @@ export async function* aiStream(
   logAi({ event: "stream_start", toolId: options.toolId, userId: options.userId });
 
   if (options.userId) {
-    const rate = checkAiRateLimit(options.userId, options.userPlan || "FREE");
+    const rate = await checkAiRateLimit(options.userId, options.userPlan || "FREE");
     if (!rate.allowed) {
       yield { type: "error", error: rate.message };
       return;

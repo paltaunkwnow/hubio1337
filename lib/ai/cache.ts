@@ -1,11 +1,8 @@
 // xd
+import Redis from "ioredis";
+
 /**
  * Caché de respuestas IA con interfaz Redis-ready.
- *
- * Implementación actual: en memoria (sin dependencias).
- * Para producción multi-instancia, definí AI_CACHE_URL (ej. redis://localhost:6379),
- * agregá `ioredis` a package.json y registrá una implementación de AiCacheStore
- * con `setAiCache()` — la interfaz ya es asíncrona y compatible.
  */
 export interface AiCacheStore {
   get(key: string): Promise<string | null>;
@@ -37,17 +34,50 @@ class MemoryAiCache implements AiCacheStore {
   }
 }
 
+class RedisAiCache implements AiCacheStore {
+  private redis: Redis;
+
+  constructor(url: string) {
+    this.redis = new Redis(url, {
+      maxRetriesPerRequest: 3,
+    });
+  }
+
+  async get(key: string): Promise<string | null> {
+    try {
+      return await this.redis.get(key);
+    } catch (error) {
+      console.error("[Redis Cache Error] Get failed:", error);
+      return null;
+    }
+  }
+
+  async set(key: string, value: string, ttlSeconds = 3600): Promise<void> {
+    try {
+      await this.redis.set(key, value, "EX", ttlSeconds);
+    } catch (error) {
+      console.error("[Redis Cache Error] Set failed:", error);
+    }
+  }
+
+  async delete(key: string): Promise<void> {
+    try {
+      await this.redis.del(key);
+    } catch (error) {
+      console.error("[Redis Cache Error] Delete failed:", error);
+    }
+  }
+}
+
 let cacheInstance: AiCacheStore | null = null;
 
 export function getAiCache(): AiCacheStore {
   if (!cacheInstance) {
     if (process.env.AI_CACHE_URL) {
-      // Redis configurado pero sin cliente instalado: se usa memoria y se avisa una vez.
-      console.warn(
-        "[Hubio AI] AI_CACHE_URL definida pero no hay cliente Redis instalado (ioredis). Usando caché en memoria."
-      );
+      cacheInstance = new RedisAiCache(process.env.AI_CACHE_URL);
+    } else {
+      cacheInstance = new MemoryAiCache();
     }
-    cacheInstance = new MemoryAiCache();
   }
   return cacheInstance;
 }

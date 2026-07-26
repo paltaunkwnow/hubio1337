@@ -129,16 +129,18 @@ export async function routeGenerate(
   throw lastError || new Error("No AI provider available");
 }
 
-export async function* routeStream(
+async function* streamWithProvider(
+  p: AiProviderId,
   messages: AiChatMessage[],
-  opts?: { model?: string; temperature?: number; maxTokens?: number; provider?: AiProviderId }
+  opts?: { model?: string; temperature?: number; maxTokens?: number }
 ): AsyncGenerator<AiStreamChunk> {
   const config = getAiConfig();
-  const p = opts?.provider || config.provider;
 
   if (p === "anthropic") {
+    const key = process.env.ANTHROPIC_API_KEY || config.apiKey;
+    if (!key) throw new Error("ANTHROPIC_API_KEY no configurada");
     yield* anthropicStream({
-      apiKey: process.env.ANTHROPIC_API_KEY || config.apiKey,
+      apiKey: key,
       model: opts?.model || process.env.ANTHROPIC_MODEL || config.model,
       messages,
       maxTokens: opts?.maxTokens,
@@ -148,10 +150,7 @@ export async function* routeStream(
 
   if (p === "gemini") {
     const gemini = getGeminiConfig();
-    if (!gemini.apiKey) {
-      yield { type: "error", error: "GEMINI_API_KEY no configurada" };
-      return;
-    }
+    if (!gemini.apiKey) throw new Error("GEMINI_API_KEY no configurada");
     yield* geminiStream({
       apiKey: gemini.apiKey,
       model: opts?.model || gemini.model,
@@ -174,19 +173,50 @@ export async function* routeStream(
     return;
   }
 
-  const key = config.apiKey || process.env.OPENAI_API_KEY || "";
-  if (!key) {
-    yield { type: "error", error: "AI_API_KEY no configurada" };
+  if (OPENAI_COMPAT_PROVIDERS.includes(p)) {
+    const key = p === "openai" ? process.env.OPENAI_API_KEY || config.apiKey : config.apiKey;
+    if (!key) throw new Error(`${p} API key no configurada`);
+    yield* openAiCompatibleStream(
+      {
+        baseUrl: resolveOpenAiBase(p, config.baseUrl),
+        apiKey: key,
+        model: opts?.model || config.model,
+        providerLabel: p,
+      },
+      { messages, temperature: opts?.temperature, maxTokens: opts?.maxTokens }
+    );
     return;
   }
 
-  yield* openAiCompatibleStream(
-    {
-      baseUrl: resolveOpenAiBase(p, config.baseUrl),
-      apiKey: key,
-      model: opts?.model || config.model,
-      providerLabel: p,
-    },
-    { messages, temperature: opts?.temperature, maxTokens: opts?.maxTokens }
-  );
+  throw new Error(`Proveedor ${p} no soportado`);
+}
+
+export async function* routeStream(
+  messages: AiChatMessage[],
+  opts?: { model?: string; temperature?: number; maxTokens?: number; provider?: AiProviderId }
+): AsyncGenerator<AiStreamChunk> {
+  const chain = getProviderChain(opts?.provider);
+  let lastError: Error | null = null;
+  let success = false;
+
+  for (const p of chain) {
+    try {
+      for await (const chunk of streamWithProvider(p, messages, opts)) {
+        if (chunk.type === "error") {
+          throw new Error(chunk.error);
+        }
+        yield chunk;
+      }
+      success = true;
+      break;
+    } catch (e) {
+      lastError = e instanceof Error ? e : new Error(String(e));
+      logAi({ event: "fallback", provider: p, error: lastError.message });
+      console.warn(`[Hubio AI Stream Fallback] Provider ${p} failed, trying next... Error: ${lastError.message}`);
+    }
+  }
+
+  if (!success) {
+    yield { type: "error", error: lastError?.message || "No AI stream provider available" };
+  }
 }

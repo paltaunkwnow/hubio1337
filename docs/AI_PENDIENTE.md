@@ -314,9 +314,9 @@ Checklist breve para no confundir hecho vs pendiente:
 |---------|----------------|------|
 | Favoritos | **Sí** (código) | Requiere migración `favorite` aplicada |
 | Summary / memoria larga | **Sí** (best-effort) | Solo si >16 msgs + IA OK; silencioso si falla |
-| Coach tool-invoke | **Parcial** | Invoke funciona; SEO sin competitors; fail-open |
-| Redis cache | **No** | Sin `ioredis`; memoria + warning |
-| Cron hosted | **No** | Endpoint listo; no scheduled |
+| Coach tool-invoke | **Sí** | Invoke funciona; SEO crawlea competidores y compara |
+| Redis cache | **Sí** | Con cliente `ioredis` y RedisAiCache habilitado |
+| Cron hosted | **Sí** | Endpoint seguro (solo Bearer) y programado en vercel.json |
 
 ---
 

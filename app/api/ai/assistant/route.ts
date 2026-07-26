@@ -101,8 +101,19 @@ async function maybeInvokeSpecialist(
     if (decision.tool === "invoke_seo") {
       const url = String(input.url || "");
       if (!url) return null;
-      const { crawlSeoPage } = await import("@/lib/ai/adapters/seo-crawl");
-      crawlData = (await crawlSeoPage(url)) as unknown as Record<string, unknown>;
+      const { crawlSeoPage, crawlCompetitors } = await import("@/lib/ai/adapters/seo-crawl");
+      const mainCrawl = await crawlSeoPage(url);
+      
+      let competitorCrawls: any[] = [];
+      const competitors = input.competitors;
+      if (Array.isArray(competitors) && competitors.length > 0) {
+        competitorCrawls = await crawlCompetitors(competitors.map(String));
+      }
+      
+      crawlData = {
+        ...mainCrawl,
+        competitors: competitorCrawls
+      } as unknown as Record<string, unknown>;
     }
 
     const agentResult = await runAgent(agentId, input, {

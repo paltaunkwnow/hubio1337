@@ -16,9 +16,7 @@ function authorize(req: Request): boolean {
   if (!secret) return false;
   const header = req.headers.get("authorization") || "";
   const bearer = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
-  const url = new URL(req.url);
-  const q = url.searchParams.get("secret") || "";
-  return bearer === secret || q === secret;
+  return bearer === secret;
 }
 
 async function refreshDashboard(userId: string, plan: string, period: string) {
