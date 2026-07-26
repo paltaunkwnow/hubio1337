@@ -111,6 +111,18 @@ export function AiAssistantChat() {
           }),
         });
 
+        if (!res.ok) {
+          const contentType = res.headers.get("content-type") || "";
+          let errMsg = "Error del servidor";
+          if (contentType.includes("application/json")) {
+            const data = await res.json();
+            errMsg = data.error || errMsg;
+          } else {
+            errMsg = await res.text() || errMsg;
+          }
+          throw new Error(errMsg);
+        }
+
         const contentType = res.headers.get("content-type") || "";
         if (contentType.includes("application/json")) {
           const data = await res.json();
@@ -270,7 +282,7 @@ export function AiAssistantChat() {
                 className={`rounded-2xl px-4 py-3.5 shadow-md border transition-all duration-200 ${
                   m.role === "user"
                     ? "bg-brand text-black rounded-tr-none border-brand/20 font-medium"
-                    : "bg-bg-tertiary/80 text-white rounded-tl-none border-border/50"
+                    : "bg-[#1b2230] text-white rounded-tl-none border-slate-700/60"
                 }`}
               >
                 {m.role === "assistant" ? (
@@ -313,7 +325,7 @@ export function AiAssistantChat() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Escribí tu consulta sobre Hubio..."
-              className="min-h-[44px] max-h-[160px] resize-none bg-bg-tertiary/90 text-white placeholder:text-gray-400/80 border-border/60 focus:border-brand/80 focus:ring-1 focus:ring-brand/80 rounded-xl px-3 py-2.5 text-sm"
+              className="min-h-[44px] max-h-[160px] resize-none bg-[#1b2230] text-white placeholder:text-gray-400 border border-slate-700/80 focus:border-brand rounded-xl px-3 py-2.5 text-sm"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
