@@ -82,9 +82,7 @@ export function AiAssistantChat() {
     setInput("Continúa desarrollando tu respuesta anterior con más detalle y pasos accionables.");
   };
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, streaming]);
+// Auto-scrolling disabled per user request
 
   const send = useCallback(
     async (regenerate = false) => {

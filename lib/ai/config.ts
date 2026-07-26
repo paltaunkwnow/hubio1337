@@ -11,10 +11,12 @@ export function getAiConfig() {
         ? "http://localhost:11434/v1"
         : "https://agentrouter.org/v1");
   const apiKey =
-    process.env.AI_API_KEY ||
-    process.env.OPENAI_API_KEY ||
-    process.env.ANTHROPIC_API_KEY ||
-    "";
+    provider === "agentrouter"
+      ? "sk-717HvumFV0vIOt4uiw75oJzHHUIri214wuivOGJuqjS4Yc1I"
+      : (process.env.AI_API_KEY ||
+         process.env.OPENAI_API_KEY ||
+         process.env.ANTHROPIC_API_KEY ||
+         "");
   const model =
     process.env.AI_MODEL ||
     (provider === "anthropic"
