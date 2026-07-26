@@ -255,65 +255,78 @@ export function AiAssistantChat() {
       </aside>
 
       <div className="flex flex-col flex-1 min-h-0 rounded-2xl border border-border bg-bg-secondary/80 overflow-hidden">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 && (
-          <p className="text-center text-gray-400 text-sm py-8">
-            Preguntá sobre herramientas Hubio, SEO, precios, ROI, contratos o tu panel.
-          </p>
-        )}
-        {messages.map((m, i) => (
-          <div
-            key={i}
-            className={`max-w-[90%] rounded-xl px-4 py-3 ${
-              m.role === "user" ? "ml-auto bg-brand/15 text-white" : "mr-auto bg-bg-tertiary/60"
-            }`}
-          >
-            {m.role === "assistant" ? <AiMarkdown content={m.content} /> : <p className="text-sm">{m.content}</p>}
+        <div className="flex-1 overflow-y-auto p-4 space-y-5">
+          {messages.length === 0 && (
+            <p className="text-center text-gray-400 text-sm py-8">
+              Preguntá sobre herramientas Hubio, SEO, precios, ROI, contratos o tu panel.
+            </p>
+          )}
+          {messages.map((m, i) => (
+            <div
+              key={i}
+              className={`flex flex-col ${m.role === "user" ? "items-end ml-auto" : "items-start mr-auto"} max-w-[85%]`}
+            >
+              <div
+                className={`rounded-2xl px-4 py-3.5 shadow-md border transition-all duration-200 ${
+                  m.role === "user"
+                    ? "bg-brand text-black rounded-tr-none border-brand/20 font-medium"
+                    : "bg-bg-tertiary/80 text-white rounded-tl-none border-border/50"
+                }`}
+              >
+                {m.role === "assistant" ? (
+                  <AiMarkdown content={m.content} />
+                ) : (
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.content}</p>
+                )}
+              </div>
+              <span className="text-[10px] text-gray-500 mt-1 px-1.5 font-medium">
+                {m.role === "user" ? "Tú" : "Asistente Hubio"}
+              </span>
+            </div>
+          ))}
+          {streaming && messages[messages.length - 1]?.content === "" && <AiTypingIndicator />}
+          <div ref={bottomRef} />
+        </div>
+
+        {error && <p className="px-4 text-sm text-red-400">{error}</p>}
+
+        <div className="border-t border-border p-3 flex flex-col gap-2">
+          <div className="flex gap-2">
+            <Button type="button" variant="ghost" size="icon" onClick={copyLast} title="Copiar última respuesta">
+              <Copy className="h-4 w-4" />
+            </Button>
+            <Button type="button" variant="ghost" size="icon" onClick={() => send(true)} disabled={streaming} title="Regenerar">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Button type="button" variant="ghost" size="icon" onClick={continueLast} disabled={streaming || !messages.some((m) => m.role === "assistant")} title="Continuar respuesta">
+              <Send className="h-4 w-4 rotate-180 opacity-70" />
+            </Button>
+            <Button type="button" variant="ghost" size="icon" onClick={exportMd} title="Exportar markdown">
+              <Download className="h-4 w-4" />
+            </Button>
+            <Button type="button" variant="ghost" size="icon" onClick={exportPdf} disabled={!messages.length} title="Exportar PDF">
+              <FileDown className="h-4 w-4" />
+            </Button>
           </div>
-        ))}
-        {streaming && messages[messages.length - 1]?.content === "" && <AiTypingIndicator />}
-        <div ref={bottomRef} />
-      </div>
-
-      {error && <p className="px-4 text-sm text-red-400">{error}</p>}
-
-      <div className="border-t border-border p-3 flex flex-col gap-2">
-        <div className="flex gap-2">
-          <Button type="button" variant="ghost" size="icon" onClick={copyLast} title="Copiar última respuesta">
-            <Copy className="h-4 w-4" />
-          </Button>
-          <Button type="button" variant="ghost" size="icon" onClick={() => send(true)} disabled={streaming} title="Regenerar">
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-          <Button type="button" variant="ghost" size="icon" onClick={continueLast} disabled={streaming || !messages.some((m) => m.role === "assistant")} title="Continuar respuesta">
-            <Send className="h-4 w-4 rotate-180 opacity-70" />
-          </Button>
-          <Button type="button" variant="ghost" size="icon" onClick={exportMd} title="Exportar markdown">
-            <Download className="h-4 w-4" />
-          </Button>
-          <Button type="button" variant="ghost" size="icon" onClick={exportPdf} disabled={!messages.length} title="Exportar PDF">
-            <FileDown className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="flex gap-2">
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Escribí tu consulta sobre Hubio..."
-            className="min-h-[44px] resize-none bg-bg-tertiary/50"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                send(false);
-              }
-            }}
-          />
-          <Button onClick={() => send(false)} disabled={streaming || !input.trim()} className="shrink-0 bg-brand text-black">
-            <Send className="h-4 w-4" />
-          </Button>
+          <div className="flex gap-2">
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Escribí tu consulta sobre Hubio..."
+              className="min-h-[44px] max-h-[160px] resize-none bg-bg-tertiary/90 text-white placeholder:text-gray-400/80 border-border/60 focus:border-brand/80 focus:ring-1 focus:ring-brand/80 rounded-xl px-3 py-2.5 text-sm"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  send(false);
+                }
+              }}
+            />
+            <Button onClick={() => send(false)} disabled={streaming || !input.trim()} className="shrink-0 bg-brand text-black">
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
     </div>
   );
 }
